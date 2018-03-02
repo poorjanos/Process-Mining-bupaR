@@ -4,6 +4,11 @@ output: html_document
 theme: cosmo
 ---
 
+# Notes On Install
+  * diagrammeR package required to install processmapR
+      + Did not work with R 3.2.x -> upgraded to R 3.4.3
+      + Visualization with processmapR::process_map() did not work with CRAN versions of diagrammeR and processmpR -> worked after reinstall from GitHub
+
 # Load Libraries and Create Event Log Object from csv File
 
 ```{r setup, include=TRUE}

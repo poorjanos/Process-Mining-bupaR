@@ -1,0 +1,108 @@
+---
+title: "Exploring bupaR"
+output: html_document
+theme: cosmo
+---
+
+# Load Libraries and Create Event Log Object from csv File
+
+```{r setup, include=TRUE}
+# Load libs
+suppressPackageStartupMessages(library(here))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(lubridate))
+
+# Import event log form csv
+event_log_df <-
+  read.csv(here::here("Data", "event_log.csv"),
+           stringsAsFactors = FALSE,
+           sep = ";")
+
+# Select life prod, add activity_instance_id, add lifecycle_id
+event_log_df_life <- event_log_df %>%
+  filter(PRODLINE == "life") %>%
+  select(-PRODLINE) %>%
+  mutate(ACTIVITY_INST_ID = as.numeric(row.names(.))) %>%
+  gather(LIFECYCLE_ID,
+         TIMESTAMP,
+         -PROPOSALID,-USERID,
+         -ACTIVITY_INST_ID,
+         -EVENT) %>%
+  mutate(TIMESTAMP = ymd_hms(TIMESTAMP)) %>%
+  arrange(PROPOSALID, TIMESTAMP) %>%
+  mutate(LIFECYCLE_ID = case_when(.$LIFECYCLE_ID == 'STARTTIMESTAMP' ~ 'START',
+                                  TRUE ~ 'END'))
+
+# Transform df into bupaR eventlog
+suppressPackageStartupMessages(library(bupaR))
+suppressPackageStartupMessages(library(processmapR))
+
+event_log_life <- event_log_df_life %>%
+  eventlog(
+    case_id = "PROPOSALID",
+    activity_id = "EVENT",
+    activity_instance_id = "ACTIVITY_INST_ID",
+    lifecycle_id = "LIFECYCLE_ID",
+    timestamp = "TIMESTAMP",
+    resource_id = "USERID"
+  )
+```
+
+# Exploratory Data Analysis of the Event Log (EDA)
+
+## Explore Event Log Object Mappings
+```{r}
+event_log_life %>% mapping
+```
+
+## Summary of Event Log Object
+```{r}
+event_log_life %>% summary
+```
+
+
+## Graph of Processing Times per Event
+
+```{r}
+event_log_life %>% 
+    processing_time("activity") %>%
+    plot
+```
+
+
+## Graph of Throughput Times
+
+This can be measured at various levels, by default here on the whole log.
+
+```{r}
+event_log_life %>% 
+     throughput_time("log")%>%
+    plot
+```
+
+## Measures of Structuredness
+
+### Activity Presence
+From docs: "Activity presence shows in what percentage of cases an activity is present."
+
+```{r}
+event_log_life %>%  activity_presence() %>%
+    plot
+```
+
+### Activity Frequency
+
+```{r}
+event_log_life %>%
+    activity_frequency("activity")
+```
+
+### Trace Coverage
+From docs: "The trace coverage metric shows the relationship between the number of different activity sequences (i.e. traces) and the number of cases they cover."
+
+```{r}
+event_log_life %>%
+    trace_coverage("trace") %>%
+    plot()
+```

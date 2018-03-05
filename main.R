@@ -42,10 +42,18 @@ event_log_life <- event_log_df_life %>%
   )
 
 
+# Filter for frequent events
 event_log_life_filt <- event_log_life %>%
   filter_activity_frequency(percentage = 0.9, reverse = F) 
-  
 
+# Filter for frequent traces
+event_log_life_filt <- event_log_life %>%
+  filter_trace_frequency(percentage = 0.8, reverse = F) 
+
+# Plot frequency map
 event_log_life_filt %>% 
   process_map()
 
+# Plot performance map
+event_log_life_filt %>% 
+  process_map(performance(median, "days"))

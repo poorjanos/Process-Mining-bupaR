@@ -1,15 +1,41 @@
 ---
 title: "Exploring bupaR"
-output: html_document
-theme: cosmo
+output:
+  html_document:
+    theme: cosmo
+    toc: true
 ---
+
+The below fit-to-purpose assesment is based on a few hour's of experimentation with bupaR on a real dataset numbering over 100k events. Neither computational power on larger datasets nor bahaviour around edge cases were tested. Please interpret results accordingly.
+
+# Summary
+> bupaR is a promising package covering all the standard features of process mining. Coming from academia, usage presupposes intermediate R coding skills and a basic understanding of process mining concepts. Heeding limitations of open-source solutions (lack of enterprise support, challanges of documentation and training), it nevertheless has the potential to deliver value to projects in industry.
+
+###PROs:  
+* Ease of data entry due to integration with standard R data structures
+* Ease of data wranging due to conformity with tidy data analytics concepts and packages (tidyverse)
+* High level of tweakability when subsetting event logs (key feature to mine interpreable process maps)
+* Featurefull EDA library: ability to compute and chart on-the-point descriptive statistics
+* Abllity to mine both frequency and performance maps of processes
+* Ease of reporting due to RMarkdown and KnitR
+
+###CONs:  
+* Uneven maturity of features: some functionality clearly better implemented than other
+* Limitations of visual outputs (interactivity, exportability, zooming)
+* Limitations of accessibility: R coding required, not suited for general BA purposes
+* No cloud or distributed solution: computing resource challanges for large datasets
+* Lacks large user base and thus community support as yet
+* Gaps in documentation: some key features lack comprehensive docs
+
 
 # Notes On Install
   * diagrammeR package required to install processmapR
       + Did not work with R 3.2.x -> upgraded to R 3.4.3
-      + Visualization with processmapR::process_map() did not work with CRAN versions of diagrammeR and processmpR -> worked after reinstall from GitHub
+      + Visualization with processmapR::process_map() did not work with CRAN versions of diagrammeR and processmpR -> worked after reinstalling dev versions from GitHub
 
-# Load Libraries and Create Event Log Object from csv File
+# Data Entry: Create Event Log from CSV File
+
+Very easy to get process data into bupaR's native S3 data structure called "event log". Documentation gives clear instruction on set-up and minimal requirements of data entry (e.g. transactional life cycles, activity instance ids etc).  
 
 ```{r setup, include=TRUE}
 # Load libs
@@ -54,7 +80,9 @@ event_log_life <- event_log_df_life %>%
   )
 ```
 
-# Exploratory Data Analysis of the Event Log (EDA)
+# Exploratory Data Analysis (EDA)
+
+Refined EDA package available for the exploration of event logs. Most metrics are easy to plot and present visually.
 
 ## Explore Event Log Object Mappings
 ```{r}
@@ -88,6 +116,8 @@ event_log_life %>%
 
 ## Measures of Structuredness
 
+Well thought-of metrics for structural understanding of process flows. Not so directly accessible in other process mining tools.
+
 ### Activity Presence
 From docs: "Activity presence shows in what percentage of cases an activity is present."
 
@@ -111,3 +141,27 @@ event_log_life %>%
     trace_coverage("trace") %>%
     plot()
 ```
+
+
+# Visualization
+
+Both essential visualizations of process mining available: frequency and performance maps. Metrics presented on graphs are tweakable. Visual output is limited though. Complex graphs are hard to zoom in on, metrics not visible. 
+
+## Frequency maps
+```{r, warning=F}
+# Filter cases having traces with at least 80% frequency
+event_log_life_filt <- event_log_life %>%
+  filter_trace_frequency(percentage = 0.8, reverse = F) 
+
+# Plot frequency map
+event_log_life_filt %>% 
+  process_map()
+```
+
+## Performance maps
+```{r, warning=F}
+# Plot performance map
+event_log_life_filt %>% 
+  process_map(performance(median, "days"))
+```
+
